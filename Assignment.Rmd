@@ -1,0 +1,54 @@
+---
+title: "Assignment"
+output: html_document
+---
+
+
+## Model Building
+The response variable, Classe, is a categorical response variable so a classification technique such as a decision tree should be used for prediction purposes. A choice was made to use random forests which have been one of the top two well performing algorithms in prediction contest (along with boosting).
+
+For my own prediction testing purposes, I set aside a *testing* set (25%) from the pml-training dataset provided. This *testing* set would not be involved in any of the model building decisions.
+
+The remainder of the pml-training dataset was further divided into a small subset (10%) and a *training* set. The small subset was used to determine the number of variables to use in the model. Only a small subset was used due to the computational time it takes to train a model that incorporates all the variables in order to establish the importance of each variable. Also, an independent dataset, the *training* set which excluded this small subset, was necessary in order to run cross validation.  The *training* set was used to train the model and to estimate the out-of-sample error, using cross validation.
+
+Variables which were removed prior to building the model were: *X* (the index), the *timestamps* and *num_window*. These would not aid in building a prediction model that could aid in predicting the quality of exercise in future cases. The *new_window* variable was kept as it indicated the summary of features being recorded (however, there were none of these cases in the pml-testing dataset). The *user_names* variable was kept as it could possibly be used to create an individual dependent prediction algorithm. The variables that were all NAs in the pml-testing dataset were also removed from the training sets since it would be silly to try to predict on a variable that will not be available (although at some point it could be but the assignment just asks us to predict the 20 cases).
+
+## Cross Validation 
+
+Cross validation was used in two ways.
+
+Firstly, since random forests have a tendency to overfit, cross validation was used to determine the number of variables that should be included in the model. This was done using the 'rfcv' randomForest function that shows "the cross-validated prediction performance of models with sequentially reduced number of predictors (ranked by variable importance)". This was run on the small subset of the *training* dataset.
+
+The following graph and table show the decreasing cross validation error as the number of predictors increases. Since the error does not change significantly between using 54 variables and 14 predictor variables, the 14 most important variables would be used to build the predictive model.
+```{r, echo=F}
+library(knitr)
+load("~/Documents/University/Coursera/Machine Learning/R code/Assignment Workspace 1.RData")
+with(results, plot(n.var, error.cv, xlab = 'number of predictors', ylab = 'cv error', type = 'l'))
+```
+```{r, echo = F}
+#knitr::kable(results$error.cv)
+results$error.cv
+```
+
+A random forest model was fitted to the small subset of data using all the variables. The variables were ranked in terms of importance (decrease in Gini). The top 14 variables were:
+
+```{r, echo = F}
+#library(knitr)
+#load("~/Documents/University/Coursera/Machine Learning/R code/Assignment Workspace.RData")
+NBvar14[1:14]
+```
+
+Secondly, once the predictors to be used were decided, 10-fold cross validation was used on an independent dataset, the *training* set. This was done using the 'train' caret function setting trainControl to method = 'cv' and leaving the default as 10-fold. The reason for doing cross validation is to get a better estimate of what the out-of-sample error rate would be.
+
+## Expected out-of-sample error 
+The OOB error rate from the above mentioned cross-validation was: 1.34%
+This is an estiamte of the out-of-sample error.
+
+## Why I made the choices I did
+These decisions have been outlined in the previous sections.
+
+Apart from what has been mentioned already, I trained a model using the top 7 important variables. As expected, the accuracy (97.8% vs 98.82%) and OOB error (2.57% vs 1.34%) were slightly worse than the final model I decided to use. 
+
+## Prediction
+The model predicted all 20 of the test cases correctly.
+
